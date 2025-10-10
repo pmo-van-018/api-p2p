@@ -120,7 +120,7 @@
     "nps": "^5.10.0",
     "nps-utils": "^1.7.0",
     "p-limit": "3.1.0",
-    "p2p-common": "https://rd-van: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@github.com/nevel-group/p2p-common.git#v1.0.1",
+    "p2p-common": "https://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@github.com/pmo-van-018/p2p-common#v1.0.1",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "passport-strategy": "^1.0.0",
