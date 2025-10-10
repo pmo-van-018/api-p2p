@@ -1,0 +1,46 @@
+# @w3tec
+
+# Logs #
+/logs
+*.log
+*.log*
+
+# Node files #
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS generated files #
+.DS_Store
+Thumbs.db
+.tmp/
+src/api/schema.gql
+
+# Typing #
+typings/
+
+# Dist #
+dist/
+tsconfig.build.json
+
+# IDE #
+.idea/
+*.swp
+.awcache
+
+# Generated source-code #
+src/**/*.js
+!src/**/sign-in-with-wallet/**/*.js
+
+src/**/*.js.map
+!src/public/**/*
+test/**/*.js
+!test/**/scripts/*.js
+test/**/*.js.map
+test/**/*.json
+coverage/
+!test/preprocessor.js
+mydb.sql
+*.db
+telegram.session
+

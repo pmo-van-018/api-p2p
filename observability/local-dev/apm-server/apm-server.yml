@@ -1,0 +1,23 @@
+apm-server:
+  host: "0.0.0.0:8200"
+  concurrent_requests: 5
+  rum:
+    enabled: true
+  kibana:
+    enabled: true
+    host: "http://kibana:5601"
+
+auth:
+  secret_token: bmV2ZWx0ZWs=
+
+queue.mem.events: 4096
+max_procs: 4
+
+output.elasticsearch:
+  hosts: [ "http://elasticsearch:9200" ]
+  username: "elastic"
+  password: "neveltek"
+
+logging:
+  level: info
+  to_files: false

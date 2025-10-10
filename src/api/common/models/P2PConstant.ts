@@ -1,0 +1,95 @@
+// Docs: https://docs.google.com/spreadsheets/d/1SrylK1KLYiP8788nMnhA-bCVI1vSlscicglpcgMHCUc/edit#gid=656366919
+export const TIME_SELL = [5, 10, 15]; // minutes
+
+export const TIME_BUY = [10, 15, 20]; // minutes
+
+export const MIN_MERCHANT_LEVEL = 1;
+
+export const MAX_MERCHANT_LEVEL = 5;
+
+export const FEE_RATE = 0.0132;
+
+export const MIN_ORDER_LIMIT = 1;
+
+export const MAX_ORDER_LIMIT = 1000;
+
+export const MAX_MERCHANT_OPERATOR = 10;
+
+export const USER_ASK_MERCHANT_TIME = 10;
+
+export const USER_ASK_CS_TIME = 20;
+
+// for pagination
+export const DEFAULT_PAGINATION_PAGE = 1;
+
+export const MIN_PAGINATION_LIMIT = 1;
+
+export const MIN_BALANCE_LIMIT = 0;
+
+export const MAX_PAGINATION_LIMIT = 100;
+
+export const SELL_ORDER_MAX_RETRY_SEND_CRYPTO = 3;
+
+export const MAX_NUMBER = 999_999_999_999;
+
+export const MAX_FIAT = 999_999_999_999;
+
+export const MAX_CRYPTO = 999_999_999_999.9999;
+
+export const MAX_FEE = 100.0;
+
+export const MAX_SUPPORT_REQUEST_LIMIT = 999;
+
+export const MAX_PAYMENT_METHOD_LIMIT = 99;
+
+export const MAX_APPEAL_RECEIVE_LIMIT = 99;
+
+export const MAX_EVIDENCE_TIME_LIMIT = 4320;
+
+export const MAX_CRYPTO_TRANSACTION_TIME_LIMIT = 30;
+
+export const MAX_ASK_TIME = 30;
+
+export const MAX_STRING_LENGTH = 255;
+
+export const MASTER_DATA_COMMON_DEFAULT = {
+  MIN_ORDER_LIMIT: 150000,
+  MAX_ORDER_LIMIT: 150000000,
+  MIN_POST_LIMIT: 150000,
+  MAX_POST_LIMIT: 150000000,
+  FEE: 0.0021,
+  PENALTY_FEE: 0.0023,
+  USER_ASK_MERCHANT_TIME: 10,
+  USER_ASK_CS_TIME: 10,
+  MERCHANT_TO_USER_TIME_SELL: 5,
+  MERCHANT_TO_USER_TIME_BUY: 10,
+  NUMBER_LIMIT_PAYMENT_METHOD: 10,
+  NUMBER_LIMIT_PICK_APPEAL: 5,
+  NUMBER_LIMIT_PICK_REQUEST: 5,
+  APPEAL_EVIDENCE_TIME: 60,
+  CRYPTO_TRANSACTION_TIME: 5,
+};
+
+export const MASTER_DATA_COMMON_MIN_VALUE = {
+  MIN_ORDER_LIMIT: 1,
+  MAX_ORDER_LIMIT: 1,
+  MIN_POST_LIMIT: 1,
+  MAX_POST_LIMIT: 1,
+  FEE: 0.0001,
+  PENALTY_FEE: 0.0001,
+  USER_ASK_MERCHANT_TIME: 5,
+  USER_ASK_CS_TIME: 5,
+  SETTING_LIMIT: 5,
+  EVIDENCE_TIME: 60,
+};
+
+export const QUEUE_NAME = {
+  APPEAL_ORDER: 'appeal-order',
+  BUY_ORDER: 'buy-order',
+  SELL_ORDER: 'sell-order',
+  CRYPTO_TRANSACTION: 'crypto-transaction',
+};
+
+export const SUB_DOMAIN_OPERATIONS_LINK = '';
+
+export const MAX_PERCENT = 999.9999;

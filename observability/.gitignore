@@ -1,0 +1,2 @@
+# Exclude vagrant file data
+.vagrant/

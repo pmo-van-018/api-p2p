@@ -1,0 +1,4 @@
+node_modules
+
+# Ignore config.js
+scripts/config/config.js

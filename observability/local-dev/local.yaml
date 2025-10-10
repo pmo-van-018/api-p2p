@@ -1,0 +1,130 @@
+version: "3.1"
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+  elastic:
+    driver: local
+
+services:
+  mysql:
+    image: "mysql:latest"
+    container_name: p2pd-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "${TYPEORM_PASSWORD}"
+      MYSQL_DATABASE: "${TYPEORM_DATABASE}"
+      MYSQL_PASSWORD: "${TYPEORM_PASSWORD}"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+    ports:
+      - "${TYPEORM_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping" ]
+
+  redis:
+    image: "redis:latest"
+    container_name: p2pd-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+
+  # ********************
+  # OBSERVABILITY
+  # ********************
+  # Elasticsearch
+  elasticsearch:
+    container_name: elasticsearch
+    image: elastic/elasticsearch:7.17.10
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.license.self_generated.type=trial
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=neveltek
+    volumes:
+      - "elastic:/usr/share/elasticsearch/data"
+    ports:
+      - "9200:9200"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    restart: on-failure
+
+  # Kibana
+  kibana:
+    container_name: kibana
+    image: elastic/kibana:7.17.10
+    environment:
+      - xpack.security.enabled=true
+      - ELASTICSEARCH_URL=elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=neveltek
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    restart: on-failure
+
+  # Fluentd
+  fluentd:
+    container_name: fluentd
+    image: nevel/fluentd:latest
+    build:
+      context: fluentd
+      dockerfile: Dockerfile
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+    depends_on:
+      - elasticsearch
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    restart: on-failure
+
+  # APM Server
+  apm-server:
+    container_name: apm-server
+    image: elastic/apm-server:7.17.10
+    volumes:
+      - ./apm-server/apm-server.yml:/usr/share/apm-server/apm-server.yml
+    ports:
+      - "8200:8200"
+    depends_on:
+      - elasticsearch
+      - kibana
+    restart: on-failure
+
+  # P2P Server
+  p2pd-server:
+    container_name: p2pd-server
+    image: neveltech/p2pd-server:latest
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+      - redis
+      - fluentd
+    command: node dist/app.js
+    restart: on-failure
+    stdin_open: true
+    tty: true
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "localhost:24224"
+        fluentd-async-connect: "true"
+        tag: "docker.p2pd-server"
