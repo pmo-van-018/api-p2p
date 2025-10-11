@@ -49,6 +49,7 @@ export class AuthMerchantService extends BaseAuthService implements IVerify2FA {
             },
             { withDeleted: true }
           );
+          console.log('operationoperationoperationoperation', operation);
           if (!operation) {
             return cb(new ForbiddenError(), null);
           }
@@ -57,6 +58,7 @@ export class AuthMerchantService extends BaseAuthService implements IVerify2FA {
           }
 
           this.sharedProfileService.updateOperationLoginAt(operation.id);
+          console.log('come to chat user token', operation?.peerChatId);
           const xChatUserToken = {
             'x-chat-user-id': operation.peerChatId,
           };
@@ -83,6 +85,7 @@ export class AuthMerchantService extends BaseAuthService implements IVerify2FA {
             },
           });
         } catch (error: any) {
+          console.log('errorerrorerrorerror', error);
           this.log.error(error.name, error.stack);
           return cb(new InternalServerError(error['name']), null);
         }
