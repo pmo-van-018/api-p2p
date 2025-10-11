@@ -40,6 +40,7 @@ export class AuthMerchantService extends BaseAuthService implements IVerify2FA {
       { name: STRATEGY_MERCHANT, store, passReqToCallback: true },
       async (req, address, cb): Promise<any> => {
         try {
+          console.log('addressaddressaddressaddressaddress', address);
           const operationsRoles: number[] = [OperationType.MERCHANT_MANAGER, OperationType.MERCHANT_OPERATOR, OperationType.MERCHANT_SUPPORTER];
           const operation = await this.sharedProfileService.findOneOperationBy(
             {
