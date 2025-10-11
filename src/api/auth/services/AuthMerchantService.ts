@@ -40,7 +40,6 @@ export class AuthMerchantService extends BaseAuthService implements IVerify2FA {
       { name: STRATEGY_MERCHANT, store, passReqToCallback: true },
       async (req, address, cb): Promise<any> => {
         try {
-          console.log('addressaddressaddressaddressaddress', address);
           const operationsRoles: number[] = [OperationType.MERCHANT_MANAGER, OperationType.MERCHANT_OPERATOR, OperationType.MERCHANT_SUPPORTER];
           const operation = await this.sharedProfileService.findOneOperationBy(
             {
@@ -65,6 +64,7 @@ export class AuthMerchantService extends BaseAuthService implements IVerify2FA {
 
           const twoFactorAuth = await this.operation2FAService.findOneByUserId(operation.id);
           const isEnabled2FA = twoFactorAuth && (await this.operation2FAService.check2FAIsEnabled(twoFactorAuth));
+          console.log('isEnabled2FAisEnabled2FA', isEnabled2FA);
           if (isEnabled2FA) {
             return cb(null, {
               ...operation,
@@ -76,6 +76,7 @@ export class AuthMerchantService extends BaseAuthService implements IVerify2FA {
             });
           }
 
+          console.log('SUccess return callback ddayayyy');
           return cb(null, {
             ...operation,
             ...xChatUserToken,
