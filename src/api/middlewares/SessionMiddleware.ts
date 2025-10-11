@@ -12,6 +12,7 @@ import { AuthUserPasswordService } from '@api/auth/services/AuthUserPasswordServ
 export class SessionMiddleware implements ExpressMiddlewareInterface {
   public use(req: express.Request, res: express.Response, next: express.NextFunction): any {
     const domain = req?.headers?.['x-domain'] || '';
+    console.log('domaindomaindomaindomain', domain);
     if (
       domain.includes(env.webDomain.admin) ||
       domain.includes(env.subDomain.admin)
