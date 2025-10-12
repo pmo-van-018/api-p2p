@@ -1,11 +1,11 @@
 import { AppealStatus } from '@api/appeal/models/Appeal';
 import { TRANSACTION_DEFAULT_OPTIONS } from '@api/common/constants/TransactionConstant';
 import { P2PError } from '@api/common/errors/P2PError';
-import { PaymentTicketStatus } from '@api/order/enums/PaymentTicketEnum';
+import { PaymentTicketStatus, PaymentTicketStatusV2 } from '@api/order/enums/PaymentTicketEnum';
 import { OrderLifeCycleError } from '@api/order/errors/OrderLifeCycleError';
 import { Order, OrderStatus } from '@api/order/models/Order';
 import { PaymentTicket } from '@api/order/models/PaymentTicket';
-import { BocRequestBodyDto } from '@api/order/requests/BocUpdateTicketRequest';
+import { UpdateTicketRequest } from '@api/order/requests/BocUpdateTicketRequest';
 import { SharedSellOrderService } from '@api/order/services/order/sell';
 import { SharedPostService } from '@api/post/services/SharedPostService';
 import { events } from '@api/subscribers/events';
@@ -25,8 +25,8 @@ export class UpdatePaymentTicketUseCase {
   ) {}
 
   @Transactional(TRANSACTION_DEFAULT_OPTIONS)
-  public async updatePaymentTicket(body: BocRequestBodyDto) {
-    const orderId = body.data?.ID;
+  public async updatePaymentTicket(body: UpdateTicketRequest) {
+    const orderId = body.data?.id;
     const status = body.data?.status;
     try {
       this.log.debug(`Start implement updatePaymentTicket method for: ${orderId} with status: ${status}`);
@@ -36,8 +36,7 @@ export class UpdatePaymentTicketUseCase {
         throw new P2PError(OrderLifeCycleError.PAYMENT_TICKET_NOT_FOUND);
       }
 
-      // Avoid duplicate update
-      if (ticket.status === status) {
+      if ([PaymentTicketStatus.CANCEL, PaymentTicketStatus.COMPLETED].includes(ticket.status)) {
         this.log.info(`[updatePaymentTicket] Ticket has been updated: ${orderId}`);
         return;
       }
@@ -48,15 +47,11 @@ export class UpdatePaymentTicketUseCase {
         throw new P2PError(OrderLifeCycleError.ORDER_NOT_FOUND);
       }
       switch (status) {
-        case PaymentTicketStatus.COMPLETED:
+        case PaymentTicketStatusV2.FINISH:
           await this.handleComplete(order, ticket);
           await this.sharedSellOrderService.savePaymentTicketLog(ticket.id, body);
           break;
-        case PaymentTicketStatus.PICKED:
-          await this.handlePickup(order, ticket);
-          await this.sharedSellOrderService.savePaymentTicketLog(ticket.id, body);
-          break;
-        case PaymentTicketStatus.CANCEL:
+        case PaymentTicketStatusV2.CANCELLED:
           await this.handleCancel(order, ticket);
           await this.sharedSellOrderService.savePaymentTicketLog(ticket.id, body);
           break;
@@ -94,19 +89,6 @@ export class UpdatePaymentTicketUseCase {
       await this.sharedSellOrderService.confirmSentTransaction(order, ticket.paymentMethodId, false);
     });
     this.log.debug('Stop implement handleComplete method for: ', order.id);
-  }
-
-  private async handlePickup(order: Order, ticket: PaymentTicket) {
-    this.log.debug('Start implement handlePickup method for: ', order.id);
-    if (ticket.status !== PaymentTicketStatus.NEW) {
-      this.log.info(`[handlePickup] Ticket has been picked but status is not NEW: ${order.id}`);
-      throw new P2PError(OrderLifeCycleError.PAYMENT_TICKET_STATUS_IS_INVALID);
-    }
-    await this.sharedSellOrderService.pickUpPaymentTicket(ticket.id);
-    ticket.status = PaymentTicketStatus.PICKED;
-    order.paymentTickets = [ticket];
-    this.eventDispatcher.dispatch(events.actions.order.sell.merchantPickPaymentTicket, order);
-    this.log.debug('End implement handlePickup method for: ', order.id);
   }
 
   private async handleCancel(order: Order, ticket: PaymentTicket) {

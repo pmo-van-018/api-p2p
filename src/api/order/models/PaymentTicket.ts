@@ -63,6 +63,9 @@ export class PaymentTicket {
   @Column({ name: 'picked_at', type: 'datetime', nullable: true })
   public pickedAt: Date;
 
+  @Column({ name: 'transfer_code', type: 'varchar', nullable: true })
+  public transferCode: string;
+
   @CreateDateColumn({ name: 'created_at' })
   public createdAt: Date;
 

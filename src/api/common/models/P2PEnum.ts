@@ -163,6 +163,15 @@ export enum SupportedBank {
   LIENVIETPOSTBANK = 'lienvietpostbank',
 }
 
+export enum BankCodeBOC {
+  VIETCOMBANK = 'vcb',
+  SEABANK = 'seab',
+  DONGABANK = 'donga',
+  PGBANK = 'pgb',
+  KIENLONGBANK = 'klb',
+  LIENVIETPOSTBANK = 'lpb',
+}
+
 export enum NotificationStatus {
   UNREAD = 0,
   READ = 1,

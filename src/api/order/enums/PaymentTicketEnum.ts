@@ -17,3 +17,11 @@ export enum PaymentTicketType {
 export enum PaymentTicketCreditDrawBy {
     AUTO = 'auto',
 }
+
+export enum PaymentTicketStatusV2 {
+    NEW = 'NEW',
+    CANCELLED = 'CANCELLED',
+    FINISH = 'FINISH',
+    FAILED = 'FAILED',
+    PENDING = 'PENDING',
+}

@@ -1,7 +1,7 @@
 import { BLOCKCHAIN_NETWORKS, TradeType } from '@api/common/models';
 import { TransactionStatus } from '@api/order/models/CryptoTransaction';
 import { Order } from '@api/order/models/Order';
-import { BocRequestBodyDto } from '@api/order/requests/BocUpdateTicketRequest';
+import { UpdateTicketRequest } from '@api/order/requests/BocUpdateTicketRequest';
 import { CONTENT_TYPE_BANK } from '@api/payment/models/PaymentMethodField';
 import { env } from '@base/env';
 import moment from 'moment';
@@ -84,7 +84,7 @@ export class CompletedOrderEventV2 {
   public updatedAt: number;
   public note: string;
   public processBy: string;
-  public bocData?: BocRequestBodyDto;
+  public bocData?: UpdateTicketRequest;
   public orderType: TradeType;
 
   constructor(order: Order) {

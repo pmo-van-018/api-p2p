@@ -7,11 +7,11 @@ import { OrderRepository } from '@api/order/repositories/OrderRepository';
 import BigNumber from 'bignumber.js';
 import { Logger, LoggerInterface } from '@base/decorators/Logger';
 import { PaymentTicketRepository } from '@api/order/repositories/PaymentTicketRepository';
-import axios, { HttpStatusCode } from 'axios';
+import axios from 'axios';
 import { PaymentTicket } from '@api/order/models/PaymentTicket';
 import { env } from '@base/env';
-import { CancelTicketBodyRequest, CreateTicketBodyRequest } from '@api/order/types/PaymentTicket';
-import { PaymentTicketRequestType, PaymentTicketStatus } from '@api/order/enums/PaymentTicketEnum';
+import { CancelTicketBodyRequest, CancelTicketResponse, CreateTicketBodyRequest, CreateTicketResponse, PaymentTicketPayloadV2 } from '@api/order/types/PaymentTicket';
+import { PaymentTicketRequestType, PaymentTicketStatusV2 } from '@api/order/enums/PaymentTicketEnum';
 import { md5Hash } from '@base/utils/secure.util';
 import { MerchantOrderLifecycleService } from '../MerchantOrderLifecycleService';
 import { SharedStatisticService } from '@api/statistic/services/SharedStatisticService';
@@ -23,9 +23,8 @@ import { CONTENT_TYPE_BANK } from '@api/payment/models/PaymentMethodField';
 import { OrderLifeCycleError } from '@api/order/errors/OrderLifeCycleError';
 import { EventDispatcher, EventDispatcherInterface } from '@base/decorators/EventDispatcher';
 import { events } from '@api/subscribers/events';
-import { isResponseSuccess } from '@base/utils/response.util';
 import { getGateway } from '@base/utils/bank-qr.utils';
-import { BocRequestBodyDto } from '@api/order/requests/BocUpdateTicketRequest';
+import { UpdateTicketRequest } from '@api/order/requests/BocUpdateTicketRequest';
 
 export class SharedSellOrderService extends SharedOrderService {
   constructor(
@@ -42,7 +41,7 @@ export class SharedSellOrderService extends SharedOrderService {
     super(orderRepository, log);
   }
 
-  public async savePaymentTicketLog(paymentTicketId: string, originalPayload: BocRequestBodyDto) {
+  public async savePaymentTicketLog(paymentTicketId: string, originalPayload: UpdateTicketRequest) {
     return this.paymentTicketRepository.updatePaymentTicketPayloadLog(paymentTicketId, JSON.stringify(originalPayload));
   }
 
@@ -89,17 +88,22 @@ export class SharedSellOrderService extends SharedOrderService {
   }
 
   public async createPaymentTicket(order: Order) {
-    const gateway = getGateway(order.paymentMethod.getPaymentMethodField(CONTENT_TYPE_BANK.BANK_NAME));
+    const bankName = order.paymentMethod.getPaymentMethodField(CONTENT_TYPE_BANK.BANK_NAME);
+    const gateway = getGateway(bankName);
     if (!gateway) {
       throw new P2PError(OrderLifeCycleError.BANK_NOT_SUPPORT);
     }
+    const isBOCSupportedBank = await this.sharedPaymentMethodService.validateBOCSupportedBank(bankName);
+    if (!isBOCSupportedBank) {
+      throw new P2PError(OrderLifeCycleError.BANK_NOT_SUPPORT);
+    }
     const ticket = await this.paymentTicketRepository.createPaymentTicket(order, gateway);
-    await this.sendPaymentTicketToBOC(ticket, order);
+    await this.sendPaymentTicketAndUpdateTransferCode(ticket, order);
     return ticket;
   }
 
-  public async pickUpPaymentTicket(paymentTicketId: string) {
-    return this.paymentTicketRepository.pickUpPaymentTicket(paymentTicketId);
+  public async pickUpPaymentTicket(paymentTicketId: string, approveAt: string, approveBy: string) {
+    return this.paymentTicketRepository.pickUpPaymentTicket(paymentTicketId, approveAt, approveBy);
   }
 
   public async cancelPaymentTicket(paymentTicketId: string) {
@@ -114,22 +118,19 @@ export class SharedSellOrderService extends SharedOrderService {
     try {
       const payload: CancelTicketBodyRequest = {
         data: {
-          ID: `${env.boc.prefix}${paymentTicket.order.refId}`,
+          id: paymentTicket.order.refId,
           user_request: userRequest,
         },
         request_type: PaymentTicketRequestType.CANCEL_TICKET,
         agent: env.boc.agent,
+        token: md5Hash(`${env.boc.agent}${env.boc.apiKey}${paymentTicket.order.refId}`),
       };
-      const cancelUrl = `${env.boc.apiUrl}/agent/request`;
-      const response = await axios.post(cancelUrl, payload);
-      if (!isResponseSuccess(response)) {
-        throw new P2PError(OrderLifeCycleError.CANCEL_PAYMENT_TICKET_IS_FAILED);
+      const { data } = await axios.post<CancelTicketResponse>(`${env.boc.apiUrl}/transfer-brand/agent-requests`, payload);
+      if (!data.success) {
+        throw new Error(data.message);
       }
     } catch (error: any) {
       this.log.error(`[requestCancelPaymentTicket] Error: ${error}`);
-      if (error?.response?.status === HttpStatusCode.Forbidden) {
-        throw new P2PError(OrderLifeCycleError.CANCEL_PAYMENT_TICKET_FORBIDDEN);
-      }
       throw new P2PError(OrderLifeCycleError.CANCEL_PAYMENT_TICKET_IS_FAILED);
     }
   }
@@ -146,39 +147,42 @@ export class SharedSellOrderService extends SharedOrderService {
     return this.paymentTicketRepository.checkPaymentTicketProcessing(orderId);
   }
 
-  private async sendPaymentTicketToBOC(paymentTicket: PaymentTicket, order: Order) {
-    const payload: CreateTicketBodyRequest = {
-      data: {
-        ID: order.refId,
-        balance: paymentTicket.amount,
-        bank_no: paymentTicket.bankNo,
-        created_at: moment(paymentTicket.createdAt).unix(),
-        credit_draw_by: order.merchant.walletAddress,
-        gateway: paymentTicket.gateway,
-        note: paymentTicket.note,
-        reciever: paymentTicket.receiver,
-        status: PaymentTicketStatus.NEW,
-        type: paymentTicket.type,
-        credit_draw_at: moment(paymentTicket.createdAt).utcOffset(env.app.timeZone).format('YYYY-MM-DD HH:mm:ss'),
-      },
-      agent: env.boc.agent,
-      token: md5Hash(`${env.boc.agent}${env.boc.apiKey}${order.refId}`),
+  private async getPaymentTicketPayload(paymentTicket: PaymentTicket, order: Order) {
+    const bankName = order.paymentMethod.getPaymentMethodField(CONTENT_TYPE_BANK.BANK_NAME);
+    const bankCode = await this.sharedPaymentMethodService.getBankCodeByBankName(bankName);
+    const brandCreatedAt = moment(paymentTicket.createdAt).utcOffset(env.app.timeZone).format('YYYY-MM-DD HH:mm:ss');
+    const ticketBody: PaymentTicketPayloadV2 = {
+      id: order.refId,
+      status: PaymentTicketStatusV2.NEW,
+      amount: paymentTicket.amount,
+      brand_created_at: brandCreatedAt,
+      to_account_no: order.paymentMethod.getPaymentMethodField(CONTENT_TYPE_BANK.BANK_NUMBER),
+      to_account_name: order.paymentMethod.getPaymentMethodField(CONTENT_TYPE_BANK.BANK_HOLDER),
+      to_bank_code: bankCode,
+      brand_approved_at: brandCreatedAt,
+      brand_approved_by: "auto"
     };
+    const payload: CreateTicketBodyRequest = {
+      data: ticketBody,
+      agent: env.boc.agent,
+      token: md5Hash(`${env.boc.agent}${env.boc.apiKey}${ticketBody.id}`),
+    };
+    return payload;
+  }
+
+  private async sendPaymentTicketAndUpdateTransferCode(paymentTicket: PaymentTicket, order: Order) {
+    const payload = await this.getPaymentTicketPayload(paymentTicket, order);
     try {
-      const response = await axios.post(env.boc.apiUrl, payload);
-      if (!isResponseSuccess(response)) {
-        console.log("Fail responseBOC: ", response);
-        throw new P2PError(OrderLifeCycleError.CREATE_PAYMENT_TICKET_IS_FAILED);
+      this.log.debug(`[sendPaymentTicketAndUpdateTransferCode] Start send payment ticket payload: ${JSON.stringify(payload)}`);
+      const { data } = await axios.post<CreateTicketResponse>(`${env.boc.apiUrl}/transfer-brand/tickets`, payload);
+      if (!data.success) {
+        throw new Error(data.message);
       }
+      await this.paymentTicketRepository.updatePaymentTicketTransferCode(paymentTicket.id, data.transfer_code);
+      this.log.debug(`[sendPaymentTicketAndUpdateTransferCode] success: ${data.transfer_code} payload: ${JSON.stringify(payload)}`);
     } catch (error: any) {
-      console.error(`[requestCancelPaymentTicket] Error: ${error}`);
-      this.log.error(`[sendPaymentTicketToBOC] Error: ${error}`);
-      if (error?.response?.status === HttpStatusCode.Forbidden) {
-        throw new P2PError(OrderLifeCycleError.CANCEL_PAYMENT_TICKET_FORBIDDEN);
-      }
+      this.log.error(`[sendPaymentTicketAndUpdateTransferCode] Error: ${error}`);
       throw new P2PError(OrderLifeCycleError.CREATE_PAYMENT_TICKET_IS_FAILED);
-    } finally {
-      console.log("Call create BOC with: ", payload);
     }
   }
 
