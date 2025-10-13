@@ -30,10 +30,12 @@ export class PaymentTicketRepository extends RepositoryBase<PaymentTicket> {
         return !!paymentTicket;
     }
 
-    public async pickUpPaymentTicket(paymentTicketId: string) {
+    public async pickUpPaymentTicket(paymentTicketId: string, approveAt: string, approveBy: string) {
         await this.update({ id: paymentTicketId }, {
             status: PaymentTicketStatus.PICKED,
             pickedAt: new Date(),
+            creditDrawAt: new Date(approveAt),
+            creditDrawBy: approveBy,
         });
     }
 
@@ -68,6 +70,12 @@ export class PaymentTicketRepository extends RepositoryBase<PaymentTicket> {
 
     public async getTicketByOrderId(orderId: string) {
         return this.findOne({ orderId });
+    }
+
+    public async updatePaymentTicketTransferCode(paymentTicketId: string, transferCode: string) {
+        await this.update({ id: paymentTicketId }, {
+            transferCode: transferCode,
+        });
     }
 }
 

@@ -1,112 +1,92 @@
-import { IsString, IsNumber, IsBoolean, IsOptional, ValidateNested, IsDateString, IsNotEmpty } from 'class-validator';
+import { IsString, ValidateNested, IsNotEmpty, IsNumber, IsIn, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
+import { BaseBOCDataDto, BaseBOCRequestDto } from './boc/BocBaseRequest';
+import { PaymentTicketStatusV2 } from '../enums/PaymentTicketEnum';
 
-class DataDto {
+export class UpdateTicketDataDto extends BaseBOCDataDto {
   @IsString()
   @IsNotEmpty()
-  ID: string;
-
-  @IsString()
-  @IsOptional()
-  note: string;
-
-  @IsString()
-  @IsOptional()
-  created_at: string;
-
-  @IsDateString()
-  @IsOptional()
-  credit_draw_at: string;
-
-  @IsString()
-  @IsOptional()
-  withdraw_bname: string;
-
-  @IsString()
-  @IsOptional()
-  withdraw_bcode: string;
-
-  @IsString()
-  @IsOptional()
-  type: string;
-
-  @IsString()
-  @IsOptional()
-  bank_no: string;
-
-  @IsString()
-  @IsOptional()
-  credit_draw_by: string;
-
-  @IsString()
-  @IsOptional()
   approved_by: string;
 
-  @IsNumber()
-  @IsOptional()
-  balance: number;
+  @IsString()
+  @IsNotEmpty()
+  approved_at: string;
 
   @IsString()
-  @IsOptional()
-  reciever: string;
-
-  @IsString()
-  @IsOptional()
-  gateway: string;
-
-  @IsString()
-  @IsOptional()
-  withdraw_bno: string;
-
-  @IsString()
-  @IsOptional()
-  uniq_id: string;
+  @IsNotEmpty()
+  note: string;
 
   @IsNumber()
-  @IsOptional()
-  status: number;
-
-  @IsOptional()
-  @IsString()
-  sender?: string;
-
-  @IsOptional()
-  @IsString()
-  trans_code?: string;
+  @IsNotEmpty()
+  amount: number;
 
   @IsString()
-  @IsOptional()
-  cash_receiv_note: string;
+  @IsNotEmpty()
+  from_account_name: string;
 
   @IsString()
-  @IsOptional()
-  cash_transfer_by: string;
+  @IsNotEmpty()
+  from_account_no: string;
 
-  @IsDateString()
-  @IsOptional()
-  cash_transfer_at: string;
-
-  @IsOptional()
   @IsString()
-  cancel_at?: string | null;
+  @IsNotEmpty()
+  from_bank_code: string;
 
-  @IsOptional()
   @IsString()
-  cancel_by?: string | null;
+  @IsNotEmpty()
+  from_unique_id: string;
 
-  @IsBoolean()
-  @IsOptional()
-  raku_ext: boolean;
+  @IsString()
+  @IsNotEmpty()
+  to_account_name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  to_account_no: string;
+
+  @IsString()
+  @IsNotEmpty()
+  to_bank_code: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsIn([PaymentTicketStatusV2.FINISH, PaymentTicketStatusV2.CANCELLED], {
+    message: 'status must be either FINISH or CANCELLED'
+  })
+  status: string;
+
+  @IsString()
+  @IsNotEmpty()
+  transfer_code: string;
+
+  @IsString()
+  @IsNotEmpty()
+  trading_code: string;
+
+  @ValidateIf(o => o.status === PaymentTicketStatusV2.CANCELLED)
+  @IsString()
+  @IsNotEmpty()
+  canceller_at: string;
+
+  @ValidateIf(o => o.status === PaymentTicketStatusV2.CANCELLED)
+  @IsString()
+  @IsNotEmpty()
+  canceller_by: string;
+
+  @ValidateIf(o => o.status === PaymentTicketStatusV2.FINISH)
+  @IsString()
+  @IsNotEmpty()
+  remitter_at: string;
+
+  @ValidateIf(o => o.status === PaymentTicketStatusV2.FINISH)
+  @IsString()
+  @IsNotEmpty()
+  remitter_by: string;
 }
 
-export class BocRequestBodyDto {
-  @IsString()
-  agent: string;
-
-  @IsString()
-  token: string;
-
+export class UpdateTicketRequest extends BaseBOCRequestDto {
+  @IsNotEmpty()
   @ValidateNested()
-  @Type(() => DataDto)
-  data: DataDto;
+  @Type(() => UpdateTicketDataDto)
+  data: UpdateTicketDataDto;
 }

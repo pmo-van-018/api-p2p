@@ -162,12 +162,18 @@ export const env = {
     clearUserNotHasOrder: getOsEnv('CRON_JOB_CLEAR_USER_NOT_HAS_ORDER'),
     handleMissingTransaction: getOsEnv('CRON_JOB_HANDLE_MISSING_TRANSACTION'),
     outBoxProducer: getOsEnv('CRON_OUT_BOX_PRODDUCER'),
+    syncBankData: getOsEnv('CRON_JOB_SYNC_BANK_DATA'),
   },
   vietQr: {
     clientId: getOsEnv('VIETQR_CLIENT_ID'),
     apiKey: getOsEnv('VIETQR_API_KEY'),
     url: getOsEnv('VIETQR_QR_URL'),
     template: getOsEnv('VIETQR_QR_TEMPLATE'),
+  },
+  payment: {
+    bankBOCApiUrl: getOsEnv('BANK_BOC_API_URL'),
+    bankBOCAgent: getOsEnv('BANK_BOC_AGENT'),
+    bankBOCCurrency: getOsEnv('BANK_BOC_CURRENCY'),
   },
   lock: {
     duration: Number(getOsEnv('LOCK_DURATION')),
@@ -294,6 +300,5 @@ export const env = {
     apiUrl: getOsEnv('BOC_API_URL'),
     agent: getOsEnv('BOC_API_AGENT'),
     apiKey: getOsEnv('BOC_API_KEY'),
-    prefix: getOsEnv('BOC_API_PREFIX'),
   },
 };
