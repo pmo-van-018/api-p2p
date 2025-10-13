@@ -297,7 +297,7 @@ export const env = {
       : undefined,
   },
   boc: {
-    apiUrl: getOsEnv('BOC_BASE_API_URL'),
+    apiUrl: getOsEnv('BOC_API_URL'),
     agent: getOsEnv('BOC_API_AGENT'),
     apiKey: getOsEnv('BOC_API_KEY'),
   },
