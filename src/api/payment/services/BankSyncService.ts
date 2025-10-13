@@ -25,7 +25,7 @@ export class BankSyncService {
 
   private async fetchBankDataFromAPI(): Promise<BankBOCData[]> {
     try {
-      const bocUrl = new URL(env.payment.bankBOCApiUrl);
+      const bocUrl = new URL(`${env.boc.apiUrl}/transfer-brand/banks`);
       bocUrl.searchParams.set('agent', this.bankBOCAgent);
       bocUrl.searchParams.set('currency', this.bankBOCCurrency);
       const response = await axios.get<BankBOCResponse>(bocUrl.toString(), {

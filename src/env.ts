@@ -171,7 +171,6 @@ export const env = {
     template: getOsEnv('VIETQR_QR_TEMPLATE'),
   },
   payment: {
-    bankBOCApiUrl: getOsEnv('BANK_BOC_API_URL'),
     bankBOCAgent: getOsEnv('BANK_BOC_AGENT'),
     bankBOCCurrency: getOsEnv('BANK_BOC_CURRENCY'),
   },
