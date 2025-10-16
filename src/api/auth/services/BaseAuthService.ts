@@ -33,6 +33,7 @@ export abstract class BaseAuthService {
   }
 
   public async prepareLoginResponse() {
+    console.log('prepareLoginResponseprepareLoginResponseprepareLoginResponse');
     return {
       success: true,
     };

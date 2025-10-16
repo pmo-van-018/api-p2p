@@ -32,15 +32,18 @@ export class AuthService extends BaseAuthService {
         if (isBlacklisted) {
           return cb(new ForbiddenError(), null);
         }
-
         const user = await this.sharedProfileService.findUserByWalletAddress(address);
+        console.log('Check user login', user);
         if (await this.invalidUserLogin(user, address)) {
+          console.log('INVALID USERRRRRRRRRR');
           return cb(new ForbiddenError(), null);
         }
         const newUser = await this.getTheLastUserLogin(user, address);
+        console.log('newUsernewUsernewUser', newUser);
         const xChatUserToken = {
           'x-chat-user-id': newUser.peerChatId,
         };
+        console.log('done strategyP2PAuthentication');
         return cb(null, { ...newUser, ...xChatUserToken });
       } catch (error: any) {
         if (error['errno'] === 1062) {
