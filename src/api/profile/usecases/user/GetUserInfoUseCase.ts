@@ -15,6 +15,7 @@ export class GetUserInfoUseCase {
   ) {}
 
   public async getInfo(id: string) {
+    console.log('Start implement GetUserInfoUseCase:Start implement GetUserInfoUseCase:');
     this.log.debug(`Start implement GetUserInfoUseCase: ${id}`);
     const user = await this.userProfileService.findOneById(id);
     if (!user) {
